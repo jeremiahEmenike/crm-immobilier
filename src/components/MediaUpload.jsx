@@ -164,17 +164,25 @@ export function DocumentUpload({ files = [], onChange, max = 5, tenantId }) {
     setUploading(true)
 
     const newFiles = [...files]
+    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+
 
     for (const file of selected) {
-      if (newFiles.length >= max) break
+      if (newFiles.length >= max) break;
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Format non supporté. Utilisez PDF ou image.');
+        continue;
+      }
 
       try {
         let url
         try {
           url = await uploadToStorage('faq-documents', file, tenantId)
-        } catch {
-          url = await toBase64(file)
-        }
+        } catch (err) {
+          console.error('Storage upload failed:', err)
+          toast.error('Erreur upload: ' + err.message)
+          continue  // skip ce fichier au lieu de stocker du base64
+}
 
         newFiles.push({
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -248,8 +256,7 @@ export function DocumentUpload({ files = [], onChange, max = 5, tenantId }) {
           ) : (
             <>
               <Upload size={16} className="text-dark-200" />
-              <span className="text-xs text-dark-200">Ajouter un document (PDF, image...)</span>
-            </>
+              <span className="text-xs text-dark-200">Ajouter un document (PDF, image)</span>            </>
           )}
         </button>
       )}
@@ -257,14 +264,14 @@ export function DocumentUpload({ files = [], onChange, max = 5, tenantId }) {
       <input
         ref={ref}
         type="file"
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+        accept=".pdf,.png,.jpg,.jpeg,.webp"
         multiple
         hidden
         onChange={handleFiles}
       />
 
       <div className="text-[11px] text-dark-200 mt-2">
-        {files.length}/{max} documents · PDF, Word, Excel, Images
+        {files.length}/{max} documents · PDF, Images
       </div>
     </div>
   )

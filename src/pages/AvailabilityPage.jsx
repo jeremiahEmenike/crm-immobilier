@@ -6,15 +6,20 @@ import { Modal, Field } from '../components/UI'
 import toast from 'react-hot-toast'
 
 // ─── Constants ────────────────────────────
+// ISODOW-1 convention (matches get_available_slots SQL function)
+// 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
 const DAYS = [
-  { num: 1, short: 'Lun', full: 'Lundi' },
-  { num: 2, short: 'Mar', full: 'Mardi' },
-  { num: 3, short: 'Mer', full: 'Mercredi' },
-  { num: 4, short: 'Jeu', full: 'Jeudi' },
-  { num: 5, short: 'Ven', full: 'Vendredi' },
-  { num: 6, short: 'Sam', full: 'Samedi' },
-  { num: 0, short: 'Dim', full: 'Dimanche' },
+  { num: 0, short: 'Lun', full: 'Lundi' },
+  { num: 1, short: 'Mar', full: 'Mardi' },
+  { num: 2, short: 'Mer', full: 'Mercredi' },
+  { num: 3, short: 'Jeu', full: 'Jeudi' },
+  { num: 4, short: 'Ven', full: 'Vendredi' },
+  { num: 5, short: 'Sam', full: 'Samedi' },
+  { num: 6, short: 'Dim', full: 'Dimanche' },
 ]
+
+// Convert JS getDay() (0=Sun) to ISODOW-1 (0=Mon)
+const jsToIsodow = (jsDay) => (jsDay + 6) % 7
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 7h → 19h
 
@@ -166,7 +171,7 @@ export default function AvailabilityPage() {
     await supabase.from('availability').delete()
       .eq('tenant_id', tenant.id).eq('user_id', currentUser.id)
     const inserts = []
-    for (let d = 1; d <= 5; d++) {
+    for (let d = 0; d <= 4; d++) {  // 0=Mon, 1=Tue, ..., 4=Fri
       inserts.push({ tenant_id: tenant.id, user_id: currentUser.id, day_of_week: d, start_time: '09:00', end_time: '12:00', is_active: true })
       inserts.push({ tenant_id: tenant.id, user_id: currentUser.id, day_of_week: d, start_time: '14:00', end_time: '17:00', is_active: true })
     }
@@ -184,7 +189,7 @@ export default function AvailabilityPage() {
     for (let i = 1; i <= 14 && previews.length < 3; i++) {
       const d = new Date(today)
       d.setDate(d.getDate() + i)
-      const dow = d.getDay()
+      const dow = jsToIsodow(d.getDay())
       const ds = daySlots(dow)
       if (ds.length > 0) {
         const dayLabel = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -277,7 +282,7 @@ export default function AvailabilityPage() {
           <div className="flex-1 grid grid-cols-7">
             {DAYS.map((day, di) => {
               const ds = daySlots(day.num)
-              const isToday = new Date().getDay() === day.num
+              const isToday = jsToIsodow(new Date().getDay()) === day.num
               const isCopyTarget = copied !== null && copied !== day.num
               const colorIdx = di % SLOT_COLORS.length
 

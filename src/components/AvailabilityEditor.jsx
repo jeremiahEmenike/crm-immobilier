@@ -5,14 +5,15 @@ import { Clock, Plus, Trash2, Loader2, Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // ─── Constants ────────────────────────────
+// ISODOW-1 convention (matches SQL function): 0=Mon, ..., 6=Sun
 const DAYS = [
-  { num: 1, label: 'Lundi',    short: 'Lun' },
-  { num: 2, label: 'Mardi',    short: 'Mar' },
-  { num: 3, label: 'Mercredi', short: 'Mer' },
-  { num: 4, label: 'Jeudi',    short: 'Jeu' },
-  { num: 5, label: 'Vendredi', short: 'Ven' },
-  { num: 6, label: 'Samedi',   short: 'Sam' },
-  { num: 0, label: 'Dimanche', short: 'Dim' },
+  { num: 0, label: 'Lundi',    short: 'Lun' },
+  { num: 1, label: 'Mardi',    short: 'Mar' },
+  { num: 2, label: 'Mercredi', short: 'Mer' },
+  { num: 3, label: 'Jeudi',    short: 'Jeu' },
+  { num: 4, label: 'Vendredi', short: 'Ven' },
+  { num: 5, label: 'Samedi',   short: 'Sam' },
+  { num: 6, label: 'Dimanche', short: 'Dim' },
 ]
 
 const fmtTime = (t) => {
@@ -147,7 +148,7 @@ export default function AvailabilityEditor() {
       .eq('user_id', currentUser.id)
 
     const inserts = []
-    for (let d = 1; d <= 5; d++) {
+    for (let d = 0; d <= 4; d++) {  // 0=Mon, ..., 4=Fri
       inserts.push({
         tenant_id: tenant.id,
         user_id: currentUser.id,

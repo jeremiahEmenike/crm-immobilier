@@ -7,34 +7,33 @@ const TenantContext = createContext(null)
 export function TenantProvider({ children }) {
   const [tenant, setTenant] = useState(null)
   const [authUser, setAuthUser] = useState(null)
+  const [currentUser, setCurrentUser] = useState(null) // users table record
   const [authLoading, setAuthLoading] = useState(true)
 
   // Listen to auth state
   useEffect(() => {
-    // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setAuthUser(session.user)
         const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name
-        loadTenant(session.user.email, name)
+        loadTenant(session.user, name)
       } else {
         setAuthLoading(false)
       }
     })
 
-    // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setAuthUser(session.user)
         const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name
-        loadTenant(session.user.email, name)
-        // Clean URL hash after OAuth callback
+        loadTenant(session.user, name)
         if (window.location.hash) {
           window.history.replaceState(null, '', window.location.pathname)
         }
       } else {
         setAuthUser(null)
         setTenant(null)
+        setCurrentUser(null)
         setAuthLoading(false)
       }
     })
@@ -42,17 +41,20 @@ export function TenantProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const loadTenant = async (email, userName) => {
+  const loadTenant = async (authUserObj, userName) => {
+    const email = authUserObj.email
+    const authUid = authUserObj.id
     try {
-      // Try to find existing tenant
+      // Try to find existing tenant by email
       const { data } = await supabase
         .from('tenants')
         .select('*')
         .eq('email', email)
         .single()
-      
+
       if (data) {
         setTenant(data)
+        await loadOrCreateUser(data.id, authUid, email, userName)
       } else {
         // Auto-create tenant for Google OAuth users
         const name = userName || email.split('@')[0]
@@ -61,12 +63,13 @@ export function TenantProvider({ children }) {
           .insert({ name, email, city: 'Lomé' })
           .select()
           .single()
-        
+
         if (error) {
           console.error('Error creating tenant:', error)
           setTenant(null)
         } else {
           setTenant(newTenant)
+          await loadOrCreateUser(newTenant.id, authUid, email, userName)
         }
       }
     } catch {
@@ -79,11 +82,77 @@ export function TenantProvider({ children }) {
           .select()
           .single()
         setTenant(newTenant)
+        if (newTenant) {
+          await loadOrCreateUser(newTenant.id, authUid, email, userName)
+        }
       } catch {
         setTenant(null)
       }
     }
     setAuthLoading(false)
+  }
+
+  // ─── Bridge: find or create users record for CRM user ────
+  const loadOrCreateUser = async (tenantId, authUid, email, name) => {
+    try {
+      // 1. Try by auth_user_id first (fastest, unique)
+      let { data: user } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_user_id', authUid)
+        .single()
+
+      if (user) {
+        setCurrentUser(user)
+        return
+      }
+
+      // 2. Try by email within tenant
+      const { data: byEmail } = await supabase
+        .from('users')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('email', email)
+        .single()
+
+      if (byEmail) {
+        // Link auth_user_id for future fast lookups
+        await supabase.from('users').update({ auth_user_id: authUid }).eq('id', byEmail.id)
+        setCurrentUser({ ...byEmail, auth_user_id: authUid })
+        return
+      }
+
+      // 3. No user found — create one (admin role for first user of tenant)
+      const { count } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+
+      const role = count === 0 ? 'admin' : 'agent'
+
+      const { data: newUser, error } = await supabase
+        .from('users')
+        .insert({
+          tenant_id: tenantId,
+          auth_user_id: authUid,
+          email,
+          name: name || email.split('@')[0],
+          role,
+          is_active: true,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating user:', error)
+        setCurrentUser(null)
+      } else {
+        setCurrentUser(newUser)
+      }
+    } catch (err) {
+      console.error('loadOrCreateUser error:', err)
+      setCurrentUser(null)
+    }
   }
 
   // Email + Password login
@@ -95,7 +164,6 @@ export function TenantProvider({ children }) {
 
   // Email + Password signup
   const signup = async ({ name, email, password, city }) => {
-    // 1. Create Supabase auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -103,7 +171,6 @@ export function TenantProvider({ children }) {
     })
     if (authError) throw new Error(authError.message)
 
-    // 2. Create tenant record
     const { data: existing } = await supabase
       .from('tenants')
       .select('id')
@@ -144,10 +211,14 @@ export function TenantProvider({ children }) {
     await supabase.auth.signOut()
     setTenant(null)
     setAuthUser(null)
+    setCurrentUser(null)
   }
 
   return (
-    <TenantContext.Provider value={{ tenant, authUser, authLoading, login, signup, loginWithGoogle, resetPassword, logout }}>
+    <TenantContext.Provider value={{
+      tenant, authUser, currentUser, authLoading,
+      login, signup, loginWithGoogle, resetPassword, logout
+    }}>
       {children}
     </TenantContext.Provider>
   )

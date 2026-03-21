@@ -9,6 +9,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const PropertiesPage = lazy(() => import('./pages/PropertiesPage'))
 const LeadsPage = lazy(() => import('./pages/LeadsPage'))
 const VisitsPage = lazy(() => import('./pages/VisitsPage'))
+const AvailabilityPage = lazy(() => import('./pages/AvailabilityPage'))
 const FaqsPage = lazy(() => import('./pages/FaqsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
@@ -59,6 +60,7 @@ function CRMApp() {
         {page === 'properties' && <PropertiesPage data={data} refresh={refresh} />}
         {page === 'leads' && <LeadsPage data={data} refresh={refresh} />}
         {page === 'visits' && <VisitsPage data={data} refresh={refresh} />}
+        {page === 'availability' && <AvailabilityPage />}
         {page === 'faqs' && <FaqsPage data={data} refresh={refresh} />}
         {page === 'settings' && <SettingsPage data={data} />}
       </Suspense>

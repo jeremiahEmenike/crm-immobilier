@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTenant } from '../hooks/useData'
 import { LayoutDashboard, Building2, Users, CalendarDays, Clock, MessageCircleQuestion, Settings, LogOut, Zap, Menu, X } from 'lucide-react'
+import NotificationBell from './NotificationBell'
 
 const NAV = [
   { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
@@ -29,10 +30,11 @@ export default function Layout({ page, onNavigate, children }) {
           <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center flex-shrink-0">
             <Zap size={16} className="text-dark-900" />
           </div>
-          <div>
+          <div className="flex-1">
             <div className="text-[11px] text-brand-500 font-bold tracking-[2px] uppercase">Cerberus</div>
             <div className="text-[10px] text-dark-200 tracking-wider">CRM IMMOBILIER</div>
           </div>
+          <NotificationBell tenantId={tenant?.id} />
         </div>
         <div className="text-sm font-bold truncate mt-2">{tenant?.name}</div>
         <div className="flex items-center gap-1.5 mt-1.5">
@@ -85,9 +87,12 @@ export default function Layout({ page, onNavigate, children }) {
           </div>
           <span className="text-sm font-bold">{tenant?.name}</span>
         </div>
-        <button onClick={() => setMobileOpen(true)} className="p-2 rounded-lg hover:bg-dark-500 text-dark-100">
-          <Menu size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell tenantId={tenant?.id} />
+          <button onClick={() => setMobileOpen(true)} className="p-2 rounded-lg hover:bg-dark-500 text-dark-100">
+            <Menu size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Sidebar Overlay */}

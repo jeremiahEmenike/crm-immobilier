@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useTenant } from '../hooks/useData'
-import { LayoutDashboard, Building2, Users, CalendarDays, Clock, MessageCircleQuestion, Settings, LogOut, Zap, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, CalendarDays, Clock, MessageSquare, MessageCircleQuestion, Settings, LogOut, Zap, Menu, X } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 
 const NAV = [
   { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
   { key: 'properties', label: 'Biens', icon: Building2 },
   { key: 'leads', label: 'Leads', icon: Users },
+  { key: 'conversations', label: 'Conversations', icon: MessageSquare },
   { key: 'visits', label: 'Visites', icon: CalendarDays },
   { key: 'availability', label: 'Disponibilités', icon: Clock },
   { key: 'faqs', label: 'FAQs', icon: MessageCircleQuestion },

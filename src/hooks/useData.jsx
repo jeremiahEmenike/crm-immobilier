@@ -41,22 +41,66 @@ export function TenantProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // ─── get_or_create_tenant: deduplication logic ────
+  // 1. Check tenants by email
+  // 2. Check users by auth_user_id → follow tenant_id
+  // 3. Check users by email → follow tenant_id
+  // 4. Only create new tenant if ALL checks fail
   const loadTenant = async (authUserObj, userName) => {
     const email = authUserObj.email
     const authUid = authUserObj.id
+    let foundTenant = null
+
     try {
-      // Try to find existing tenant by email
-      const { data } = await supabase
+      // Step 1: Direct match on tenants.email
+      const { data: byEmail } = await supabase
         .from('tenants')
         .select('*')
         .eq('email', email)
-        .single()
+        .maybeSingle()
 
-      if (data) {
-        setTenant(data)
-        await loadOrCreateUser(data.id, authUid, email, userName)
-      } else {
-        // Auto-create tenant for Google OAuth users
+      if (byEmail) {
+        foundTenant = byEmail
+      }
+
+      // Step 2: Check users.auth_user_id → tenant
+      if (!foundTenant) {
+        const { data: userByAuth } = await supabase
+          .from('users')
+          .select('tenant_id')
+          .eq('auth_user_id', authUid)
+          .maybeSingle()
+
+        if (userByAuth) {
+          const { data: t } = await supabase
+            .from('tenants')
+            .select('*')
+            .eq('id', userByAuth.tenant_id)
+            .single()
+          if (t) foundTenant = t
+        }
+      }
+
+      // Step 3: Check users.email → tenant
+      if (!foundTenant) {
+        const { data: userByEmail } = await supabase
+          .from('users')
+          .select('tenant_id')
+          .eq('email', email)
+          .maybeSingle()
+
+        if (userByEmail) {
+          const { data: t } = await supabase
+            .from('tenants')
+            .select('*')
+            .eq('id', userByEmail.tenant_id)
+            .single()
+          if (t) foundTenant = t
+        }
+      }
+
+      // Step 4: No match anywhere → create new tenant (legitimate new agency)
+      if (!foundTenant) {
         const name = userName || email.split('@')[0]
         const { data: newTenant, error } = await supabase
           .from('tenants')
@@ -67,27 +111,17 @@ export function TenantProvider({ children }) {
         if (error) {
           console.error('Error creating tenant:', error)
           setTenant(null)
-        } else {
-          setTenant(newTenant)
-          await loadOrCreateUser(newTenant.id, authUid, email, userName)
+          setAuthLoading(false)
+          return
         }
+        foundTenant = newTenant
       }
-    } catch {
-      // .single() throws if no row found — auto-create
-      try {
-        const name = userName || email.split('@')[0]
-        const { data: newTenant } = await supabase
-          .from('tenants')
-          .insert({ name, email, city: 'Lomé' })
-          .select()
-          .single()
-        setTenant(newTenant)
-        if (newTenant) {
-          await loadOrCreateUser(newTenant.id, authUid, email, userName)
-        }
-      } catch {
-        setTenant(null)
-      }
+
+      setTenant(foundTenant)
+      await loadOrCreateUser(foundTenant.id, authUid, email, userName)
+    } catch (err) {
+      console.error('loadTenant error:', err)
+      setTenant(null)
     }
     setAuthLoading(false)
   }

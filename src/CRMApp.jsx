@@ -1,7 +1,6 @@
 import { useState, useCallback, lazy, Suspense } from 'react'
 import { useTenant, useCRMData } from './hooks/useData'
 import Layout from './components/Layout'
-import AuthPage from './pages/AuthPage'
 import OnboardingWizard from './pages/OnboardingWizard'
 import { Loader2 } from 'lucide-react'
 
@@ -55,8 +54,11 @@ function CRMApp() {
     )
   }
 
-  // Not logged in
-  if (!tenant) return <AuthPage />
+  // Not logged in — redirect to landing page (has auth modal)
+  if (!tenant) {
+    window.location.href = '/'
+    return null
+  }
 
   // Onboarding wizard for new users
   if (onboardingDone === false) {

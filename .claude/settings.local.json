@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx vite:*)",
+      "WebFetch(domain:crm-immobilier.vercel.app)",
+      "Bash(gh repo:*)",
+      "WebFetch(domain:crm-immobilier-cr9nl1kee-jeremiahemenikes-projects.vercel.app)",
+      "WebFetch(domain:crm-immobilier-jeremiahemenikes-projects.vercel.app)",
+      "WebFetch(domain:crm-immobilier-puce.vercel.app)"
+    ]
+  }
+}

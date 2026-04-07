@@ -43,7 +43,7 @@ function CRMApp() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-dark-900">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 size={28} className="text-brand-500 animate-spin" />
+          <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-dark-100 text-sm">Chargement...</p>
         </div>
       </div>
@@ -56,13 +56,22 @@ function CRMApp() {
   }
 
   // Authenticated but tenant failed to load — show error instead of redirecting (avoids loop)
+// Authenticated but tenant failed to load — show error instead of redirecting (avoids loop)
+  // 3. Utilisateur connecté mais tenant non chargé → affichage d'erreur (pas de redirection)
   if (!tenant) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-dark-900">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 size={28} className="text-brand-500 animate-spin" />
-          <p className="text-dark-100 text-sm">Chargement du compte...</p>
-          <button onClick={logout} className="mt-4 text-xs text-dark-300 hover:text-white underline">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center p-6">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+            <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-white">Erreur de chargement du compte</h3>
+          <p className="text-dark-200 text-sm">
+            Impossible de charger les données de votre agence. Vérifiez votre connexion ou contactez le support.
+          </p>
+          <button onClick={logout} className="mt-4 btn-primary">
             Se déconnecter
           </button>
         </div>

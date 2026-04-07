@@ -7,7 +7,10 @@
       "Bash(gh repo:*)",
       "WebFetch(domain:crm-immobilier-cr9nl1kee-jeremiahemenikes-projects.vercel.app)",
       "WebFetch(domain:crm-immobilier-jeremiahemenikes-projects.vercel.app)",
-      "WebFetch(domain:crm-immobilier-puce.vercel.app)"
+      "WebFetch(domain:crm-immobilier-puce.vercel.app)",
+      "Bash(grep -r redirect '/c/Users/DELL/Documents/CERBERUS AI/crm-cerberus-phase3/crm-immobilier/src' --include=*.jsx --include=*.js)",
+      "Bash(gh pr:*)",
+      "Bash(where gh:*)"
     ]
   }
 }

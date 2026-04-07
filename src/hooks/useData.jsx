@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 // ─── Tenant + Agent Context ────────────────
@@ -11,32 +11,47 @@ export function TenantProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true)
   const [agents, setAgents] = useState([])
   const [activeAgent, setActiveAgent] = useState(null)
+  const loadingRef = useRef(false) // prevent double loadTenant calls
 
   // Listen to auth state
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const handleAuth = async (session) => {
       if (session?.user) {
-        setAuthUser(session.user)
-        const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name
-        loadTenant(session.user, name)
-      } else {
-        setAuthLoading(false)
-      }
-    })
+        // Skip if already loading tenant for this session (prevents race condition)
+        if (loadingRef.current) return
+        loadingRef.current = true
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
         setAuthUser(session.user)
+        setAuthLoading(true)
         const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name
-        loadTenant(session.user, name)
+        await loadTenant(session.user, name)
+
+        loadingRef.current = false
+        // Clean OAuth hash from URL
         if (window.location.hash) {
           window.history.replaceState(null, '', window.location.pathname)
         }
       } else {
+        loadingRef.current = false
         setAuthUser(null)
         setTenant(null)
         setCurrentUser(null)
         setAuthLoading(false)
+      }
+    }
+
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleAuth(session)
+    })
+
+    // Auth state changes (sign-in, sign-out — skip token refreshes)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') return
+      if (event === 'SIGNED_OUT') {
+        handleAuth(null)
+      } else {
+        handleAuth(session)
       }
     })
 

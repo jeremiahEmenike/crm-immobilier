@@ -1,4 +1,5 @@
-import { useState, useCallback, lazy, Suspense } from 'react'
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useTenant, useCRMData } from './hooks/useData'
 import Layout from './components/Layout'
 import OnboardingWizard from './pages/OnboardingWizard'
@@ -27,20 +28,15 @@ function PageLoader() {
 }
 
 function CRMApp() {
-  const { tenant, authLoading } = useTenant()
+  const { tenant, authUser, authLoading, logout } = useTenant()
   const { data, loading, refresh } = useCRMData()
   const [page, setPage] = useState('dashboard')
   const [onboardingDone, setOnboardingDone] = useState(null) // null = unknown, true/false
 
   // Sync onboarding state from tenant
-  const checkOnboarding = useCallback(() => {
+  useEffect(() => {
     if (tenant) setOnboardingDone(!!tenant.onboarding_completed)
   }, [tenant])
-
-  // Check on tenant load
-  useState(() => { checkOnboarding() })
-  // Re-check when tenant changes
-  if (tenant && onboardingDone === null) checkOnboarding()
 
   // Auth loading
   if (authLoading) {
@@ -54,10 +50,24 @@ function CRMApp() {
     )
   }
 
-  // Not logged in — redirect to landing page (has auth modal)
+  // Not logged in at all — safe to redirect to landing
+  if (!authUser) {
+    return <Navigate to="/" replace />
+  }
+
+  // Authenticated but tenant failed to load — show error instead of redirecting (avoids loop)
   if (!tenant) {
-    window.location.href = '/'
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-900">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 size={28} className="text-brand-500 animate-spin" />
+          <p className="text-dark-100 text-sm">Chargement du compte...</p>
+          <button onClick={logout} className="mt-4 text-xs text-dark-300 hover:text-white underline">
+            Se déconnecter
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // Onboarding wizard for new users

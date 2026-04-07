@@ -266,9 +266,6 @@ export function TenantProvider({ children }) {
   const loginWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/app',
-      }
     })
     if (error) throw new Error(error.message)
   }

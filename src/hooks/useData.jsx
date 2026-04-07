@@ -70,20 +70,22 @@ const loadTenant = async (authUserObj, userName) => {
 
   try {
     // Step 1: Direct match on tenants.email
-    const { data: byEmail } = await supabase
+    const { data: byEmail, error: emailErr } = await supabase
       .from('tenants')
       .select('*')
       .eq('email', email)
       .maybeSingle()
+    if (emailErr) console.error('RLS: tenants select by email failed:', emailErr.message)
     if (byEmail) foundTenant = byEmail
 
     // Step 2: Check users.auth_user_id → tenant
     if (!foundTenant) {
-      const { data: userByAuth } = await supabase
+      const { data: userByAuth, error: authErr } = await supabase
         .from('users')
         .select('tenant_id')
         .eq('auth_user_id', authUid)
         .maybeSingle()
+      if (authErr) console.error('RLS: users select by auth_user_id failed:', authErr.message)
       if (userByAuth) {
         const { data: t } = await supabase
           .from('tenants')
@@ -96,11 +98,12 @@ const loadTenant = async (authUserObj, userName) => {
 
     // Step 3: Check users.email → tenant
     if (!foundTenant) {
-      const { data: userByEmail } = await supabase
+      const { data: userByEmail, error: userEmailErr } = await supabase
         .from('users')
         .select('tenant_id')
         .eq('email', email)
         .maybeSingle()
+      if (userEmailErr) console.error('RLS: users select by email failed:', userEmailErr.message)
       if (userByEmail) {
         const { data: t } = await supabase
           .from('tenants')

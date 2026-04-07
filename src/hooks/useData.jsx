@@ -63,86 +63,84 @@ export function TenantProvider({ children }) {
   // 2. Check users by auth_user_id → follow tenant_id
   // 3. Check users by email → follow tenant_id
   // 4. Only create new tenant if ALL checks fail
-  const loadTenant = async (authUserObj, userName) => {
-    const email = authUserObj.email
-    const authUid = authUserObj.id
-    let foundTenant = null
+const loadTenant = async (authUserObj, userName) => {
+  const email = authUserObj.email
+  const authUid = authUserObj.id
+  let foundTenant = null
 
-    try {
-      // Step 1: Direct match on tenants.email
-      const { data: byEmail } = await supabase
-        .from('tenants')
-        .select('*')
+  try {
+    // Step 1: Direct match on tenants.email
+    const { data: byEmail } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle()
+    if (byEmail) foundTenant = byEmail
+
+    // Step 2: Check users.auth_user_id → tenant
+    if (!foundTenant) {
+      const { data: userByAuth } = await supabase
+        .from('users')
+        .select('tenant_id')
+        .eq('auth_user_id', authUid)
+        .maybeSingle()
+      if (userByAuth) {
+        const { data: t } = await supabase
+          .from('tenants')
+          .select('*')
+          .eq('id', userByAuth.tenant_id)
+          .single()
+        if (t) foundTenant = t
+      }
+    }
+
+    // Step 3: Check users.email → tenant
+    if (!foundTenant) {
+      const { data: userByEmail } = await supabase
+        .from('users')
+        .select('tenant_id')
         .eq('email', email)
         .maybeSingle()
-
-      if (byEmail) {
-        foundTenant = byEmail
-      }
-
-      // Step 2: Check users.auth_user_id → tenant
-      if (!foundTenant) {
-        const { data: userByAuth } = await supabase
-          .from('users')
-          .select('tenant_id')
-          .eq('auth_user_id', authUid)
-          .maybeSingle()
-
-        if (userByAuth) {
-          const { data: t } = await supabase
-            .from('tenants')
-            .select('*')
-            .eq('id', userByAuth.tenant_id)
-            .single()
-          if (t) foundTenant = t
-        }
-      }
-
-      // Step 3: Check users.email → tenant
-      if (!foundTenant) {
-        const { data: userByEmail } = await supabase
-          .from('users')
-          .select('tenant_id')
-          .eq('email', email)
-          .maybeSingle()
-
-        if (userByEmail) {
-          const { data: t } = await supabase
-            .from('tenants')
-            .select('*')
-            .eq('id', userByEmail.tenant_id)
-            .single()
-          if (t) foundTenant = t
-        }
-      }
-
-      // Step 4: No match anywhere → create new tenant (legitimate new agency)
-      if (!foundTenant) {
-        const name = userName || email.split('@')[0]
-        const { data: newTenant, error } = await supabase
+      if (userByEmail) {
+        const { data: t } = await supabase
           .from('tenants')
-          .insert({ name, email, city: 'Lomé' })
-          .select()
+          .select('*')
+          .eq('id', userByEmail.tenant_id)
           .single()
-
-        if (error) {
-          console.error('Error creating tenant:', error)
-          setTenant(null)
-          setAuthLoading(false)
-          return
-        }
-        foundTenant = newTenant
+        if (t) foundTenant = t
       }
-
-      setTenant(foundTenant)
-      await loadOrCreateUser(foundTenant.id, authUid, email, userName)
-      await loadAgents(foundTenant.id)
-    } catch (err) {
-      console.error('loadTenant error:', err)
-      setTenant(null)
     }
-    setAuthLoading(false)
+
+    // Step 4: No match → create new tenant
+    if (!foundTenant) {
+      const name = userName || email.split('@')[0]
+      const { data: newTenant, error: tenantError } = await supabase
+        .from('tenants')
+        .insert({ name, email, city: 'Lomé' })
+        .select()
+        .single()
+
+      if (tenantError) {
+        console.error("Supabase insert tenant error:", tenantError)
+        console.error("Full error object:", JSON.stringify(tenantError, null, 2))
+        setTenant(null)
+        setAuthLoading(false)
+        return
+      }
+      foundTenant = newTenant   // ← CRUCIAL : assigner le nouveau tenant
+    }
+
+    // Maintenant, foundTenant existe toujours
+    setTenant(foundTenant)
+    await loadOrCreateUser(foundTenant.id, authUid, email, userName)
+    await loadAgents(foundTenant.id)
+
+  } catch (err) {
+    console.error('loadTenant error:', err)
+    setTenant(null)
   }
+  setAuthLoading(false)
+}
 
   // ─── Load agents for tenant ─────────────────────
   const loadAgents = async (tenantId) => {

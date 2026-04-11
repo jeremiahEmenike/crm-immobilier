@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTenant } from '../hooks/useData'
-import { LayoutDashboard, Building2, Users, CalendarDays, Clock, MessageSquare, MessageCircleQuestion, Settings, LogOut, Menu, X, Workflow, Bot, ChevronDown, Map, Sliders } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, CalendarDays, Clock, MessageSquare, MessageCircleQuestion, Settings, LogOut, Menu, X, Workflow, Bot, ChevronDown, Map, Sliders, Phone } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import { SECTOR_LABELS } from '../lib/constants'
 
@@ -16,6 +16,7 @@ const NAV = [
   { key: 'visits', label: 'Visites', icon: CalendarDays },
   { key: 'availability', label: 'Disponibilités', icon: Clock },
   { key: 'faqs', label: 'FAQs', icon: MessageCircleQuestion },
+  { key: 'whatsapp', label: 'WhatsApp', icon: Phone },
   { key: 'settings', label: 'Paramètres', icon: Settings },
 ]
 

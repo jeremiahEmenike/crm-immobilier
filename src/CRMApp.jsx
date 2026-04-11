@@ -18,6 +18,7 @@ const ConversationBuilderPage = lazy(() => import('./pages/ConversationBuilderPa
 const AgentBuilderPage = lazy(() => import('./pages/AgentBuilderPage'))
 const AgencyMapPage = lazy(() => import('./pages/AgencyMapPage'))
 const TemplateConfigPage = lazy(() => import('./pages/TemplateConfigPage'))
+const WhatsAppNumbersPage = lazy(() => import('./pages/WhatsAppNumbersPage'))
 
 function PageLoader() {
   return (
@@ -109,6 +110,7 @@ function CRMApp() {
         {page === 'visits' && <VisitsPage data={data} refresh={refresh} />}
         {page === 'availability' && <AvailabilityPage />}
         {page === 'faqs' && <FaqsPage data={data} refresh={refresh} />}
+        {page === 'whatsapp' && <WhatsAppNumbersPage />}
         {page === 'settings' && <SettingsPage data={data} />}
         {page === 'builder' && <ConversationBuilderPage />}
       </Suspense>

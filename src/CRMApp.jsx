@@ -14,10 +14,7 @@ const AvailabilityPage = lazy(() => import('./pages/AvailabilityPage'))
 const ConversationsPage = lazy(() => import('./pages/ConversationsPage'))
 const FaqsPage = lazy(() => import('./pages/FaqsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
-const ConversationBuilderPage = lazy(() => import('./pages/ConversationBuilderPage'))
 const AgentBuilderPage = lazy(() => import('./pages/AgentBuilderPage'))
-const AgencyMapPage = lazy(() => import('./pages/AgencyMapPage'))
-const TemplateConfigPage = lazy(() => import('./pages/TemplateConfigPage'))
 const WhatsAppNumbersPage = lazy(() => import('./pages/WhatsAppNumbersPage'))
 
 function PageLoader() {
@@ -102,8 +99,6 @@ function CRMApp() {
       <Suspense fallback={<PageLoader />}>
         {page === 'dashboard' && <DashboardPage data={data} />}
         {page === 'agents' && <AgentBuilderPage />}
-        {page === 'agency-map' && <AgencyMapPage />}
-        {page === 'templates' && <TemplateConfigPage />}
         {page === 'properties' && <PropertiesPage data={data} refresh={refresh} />}
         {page === 'leads' && <LeadsPage data={data} refresh={refresh} />}
         {page === 'conversations' && <ConversationsPage />}
@@ -112,7 +107,6 @@ function CRMApp() {
         {page === 'faqs' && <FaqsPage data={data} refresh={refresh} />}
         {page === 'whatsapp' && <WhatsAppNumbersPage />}
         {page === 'settings' && <SettingsPage data={data} />}
-        {page === 'builder' && <ConversationBuilderPage />}
       </Suspense>
     </Layout>
   )

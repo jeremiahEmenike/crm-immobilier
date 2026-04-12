@@ -168,6 +168,17 @@ const loadTenant = async (authUserObj, userName) => {
     if (tenant?.id) await loadAgents(tenant.id)
   }
 
+  // Reload tenant data from DB (used after onboarding completes)
+  const refreshTenant = async () => {
+    if (!tenant?.id) return
+    const { data: fresh } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('id', tenant.id)
+      .single()
+    if (fresh) setTenant(fresh)
+  }
+
   // ─── Bridge: find or create users record for CRM user ────
   const loadOrCreateUser = async (tenantId, authUid, email, name) => {
     try {
@@ -292,7 +303,7 @@ const loadTenant = async (authUserObj, userName) => {
   return (
     <TenantContext.Provider value={{
       tenant, authUser, currentUser, authLoading,
-      agents, activeAgent, setActiveAgent, refreshAgents,
+      agents, activeAgent, setActiveAgent, refreshAgents, refreshTenant,
       login, signup, loginWithGoogle, resetPassword, logout
     }}>
       {children}

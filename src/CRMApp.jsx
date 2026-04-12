@@ -26,10 +26,11 @@ function PageLoader() {
 }
 
 function CRMApp() {
-  const { tenant, authUser, authLoading, logout } = useTenant()
+  const { tenant, authUser, authLoading, logout, refreshTenant } = useTenant()
   const { data, loading, refresh } = useCRMData()
   const [page, setPage] = useState('dashboard')
   const [onboardingDone, setOnboardingDone] = useState(null) // null = unknown, true/false
+  const [transitioning, setTransitioning] = useState(false)
 
   // Sync onboarding state from tenant
   useEffect(() => {
@@ -78,8 +79,29 @@ function CRMApp() {
   }
 
   // Onboarding wizard for new users
-  if (onboardingDone === false) {
-    return <OnboardingWizard onComplete={() => { setOnboardingDone(true); refresh() }} />
+  if (onboardingDone === false && !transitioning) {
+    return <OnboardingWizard onComplete={async () => {
+      setTransitioning(true)
+      await refreshTenant()
+      await refresh()
+      setOnboardingDone(true)
+      setTransitioning(false)
+    }} />
+  }
+
+  // Transition screen after onboarding
+  if (transitioning) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-brand-500/10 flex items-center justify-center">
+            <Loader2 size={24} className="text-brand-500 animate-spin" />
+          </div>
+          <p className="text-dark-50 font-medium text-sm">Préparation de votre espace...</p>
+          <p className="text-dark-200 text-xs">Votre agent est en cours de déploiement</p>
+        </div>
+      </div>
+    )
   }
 
   // Data loading
